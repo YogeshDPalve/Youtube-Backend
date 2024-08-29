@@ -1,8 +1,27 @@
 import express from "express";
 import "dotenv/config";
+import morgan from "morgan";
+import logger from "./logger.js";
 
 const app = express();
 const port = process.env.PORT || 4000;
+const morganFormat = ":method :url :status :response-time ms";
+
+app.use(
+  morgan(morganFormat, {
+    stream: {
+      write: (message) => {
+        const logObject = {
+          method: message.split(" ")[0],
+          url: message.split(" ")[1],
+          status: message.split(" ")[2],
+          responseTime: message.split(" ")[3],
+        };
+        logger.info(JSON.stringify(logObject));
+      },
+    },
+  })
+);
 
 app.use(express.json());
 
@@ -11,7 +30,11 @@ let nextId = 1;
 
 //! Add a new tea
 app.post("/teas", (req, res) => {
-  // req.body.price
+  // logger.info("This is an info message");
+  // logger.error("This is an error message");
+  // logger.warn("This is a warning message");
+  // logger.debug("This is a debug message");
+
   const { name, price } = req.body;
   const newTea = { id: nextId++, name, price };
   teaData.push(newTea);
@@ -51,7 +74,7 @@ app.delete("/teas/:id", (req, res) => {
     return res.status(404).send("tea not found");
   }
   teaData.splice(index, 1);
-  return res.status(204).send("tea DELETED !");
+  return res.status(204).json({ msg: "tea DELETED !" });
 });
 
 app.listen(port, () => {
